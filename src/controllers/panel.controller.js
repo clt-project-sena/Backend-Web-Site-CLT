@@ -1,5 +1,18 @@
 const Panel = require('../models/panel.model');
-const minioClient = require('../request/minio');
+const fs = require('fs');
+const path = require('path');
+
+// Guardar Imagen
+const saveImages = (imageName, imageType, imageStream) => {
+    try {
+        var x = Buffer.from(imageStream);
+        console.log(imageStream);
+        fs.writeFileSync(path.join(__dirname, `../image/${imageName}.${imageType}`), Buffer.from(imageStream, 'base64'));
+    } catch (error) {
+        console.log(error);
+    }
+
+}
 // Crear y guardar
 exports.create = async (req, res)=> {
     try{
@@ -7,11 +20,8 @@ exports.create = async (req, res)=> {
         if (imageName == null || imageType == null || imageStream == null) {
             res.status(422).send({ message: err.message || 'No pueden estar vacíos.' });
         }
-        minioClient.uploadImages(
-            imageName, 
-            Buffer.from(imageStream, 'base64'), 
-            imageType       
-        );
+        saveImages(imageName, imageType, imageStream);
+
         const panel = new Panel(req.body);
         await panel.save();
         res.send(panel);
@@ -66,11 +76,7 @@ exports.update = async (req, res) => {
         if (imageStream && imageType) {
             panel.imageName = imageName;
             panel.imageType = imageType;
-            minioClient.uploadImages(
-                imageName, 
-                Buffer.from(imageStream, 'base64'), 
-                imageType
-            );
+            saveImages(imageName, imageType, imageStream);
         }
 
         panel = await Panel.findOneAndUpdate({_id:req.params.id}, panel, {new: true});
@@ -103,7 +109,7 @@ exports.getImages = async (req, res) => {
 
         const panel = await Panel.findOne({ imageName });
         const imageType = panel.imageType;
-        const imageBuffer = await minioClient.getImage(process.env.BUCKET_NAME_IMAGE, `${imageName}.${imageType}`);
+        const imageBuffer = fs.readFileSync(path.join(__dirname, `../image/${imageName}.${imageType}`));
 
         if (!imageBuffer) {
             res.status(422).send({ message: 'Hubo un error al obtener la imagen.' });
@@ -112,7 +118,6 @@ exports.getImages = async (req, res) => {
         res.set('content-type', `image/${imageType}`);
         res.status(200).send(imageBuffer);
     } catch (error) {
-        console.log(error);
         res.status(500).send({ message: `Hubo un error al momento de obtener la imagen ${error}` });
     }
 }
