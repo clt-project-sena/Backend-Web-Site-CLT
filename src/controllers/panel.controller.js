@@ -5,9 +5,7 @@ const path = require('path');
 // Guardar Imagen
 const saveImages = (imageName, imageType, imageStream) => {
     try {
-        var x = Buffer.from(imageStream);
-        console.log(imageStream);
-        fs.writeFileSync(path.join(__dirname, `../image/${imageName}.${imageType}`), Buffer.from(imageStream, 'base64'));
+        fs.writeFileSync(path.join(__dirname, `../files/${imageName}.${imageType}`), Buffer.from(imageStream, 'base64'));
     } catch (error) {
         console.log(error);
     }
@@ -109,7 +107,7 @@ exports.getImages = async (req, res) => {
 
         const panel = await Panel.findOne({ imageName });
         const imageType = panel.imageType;
-        const imageBuffer = fs.readFileSync(path.join(__dirname, `../image/${imageName}.${imageType}`));
+        const imageBuffer = fs.readFileSync(path.join(__dirname, `../files/${imageName}.${imageType}`));
 
         if (!imageBuffer) {
             res.status(422).send({ message: 'Hubo un error al obtener la imagen.' });
